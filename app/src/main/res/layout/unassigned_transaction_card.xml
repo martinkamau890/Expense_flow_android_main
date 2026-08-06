@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/unassigned_counter_sub"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="16dp"
+    android:background="#FFFFFF"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+        <RelativeLayout
+            android:id="@+id/relative_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/item_icon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@android:drawable/ic_menu_agenda"
+                android:layout_centerVertical="true"
+                android:layout_alignParentStart="true"
+                app:tint="@color/Primary" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_toEndOf="@id/item_icon"
+                android:layout_marginStart="12dp"
+                android:layout_centerVertical="true">
+                <TextView
+                    android:id="@+id/tv_transactionRecipient"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="LNM-12345 to JUMIA"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/black" />
+                <TextView
+                    android:id="@+id/tv_transactionDateTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Today, 10:45 AM • M-PESA SMS"
+                    android:textSize="11sp"
+                    android:textColor="@color/TextColor" />
+            </LinearLayout>
+
+        </RelativeLayout>
+    <TextView
+        android:id="@+id/tv_message_snippet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#F5F2FB"
+        android:layout_marginTop="12dp"
+        android:padding="10dp"
+        android:text="Confirmed. KES 2,500.00 paid to JUMIA ONLINE. Transaction ID: LNM-12345..."
+        android:textSize="12sp"
+        android:textColor="@color/TextColor" />
+
+        <!-- SMS content block -->
+    <TextView
+        android:id="@+id/tv_transactionAmount"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="right"
+        android:padding="10dp"
+        android:text="Ksh 2,500.00"
+        android:textColor="@color/TextColor"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+        <!-- Action row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Category"
+                android:textStyle="bold"
+                android:textColor="#454652"
+                android:textSize="12sp"/>
+
+            <Spinner
+                android:id="@+id/category_spinner"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="4dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Account"
+                android:textStyle="bold"
+                android:textColor="#454652"
+                android:textSize="12sp"/>
+
+            <Spinner
+                android:id="@+id/account_spinner"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="4dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/quick_assign_switch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="Quick Assign Future Transactions"
+                    android:textColor="#454652"
+                    android:textSize="12sp"/>
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/assign_button"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:layout_gravity="end"
+                android:layout_marginTop="12dp"
+                android:text="Assign"
+                android:backgroundTint="@color/Primary"/>
+
+        </LinearLayout>
+</LinearLayout>

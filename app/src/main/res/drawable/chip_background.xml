@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <!-- Light gray-violet background for chips -->
+    <solid android:color="#F0EDF6" />
+    <!-- Rounded corners (fully rounded pill) -->
+    <corners android:radius="100dp" />
+</shape>
