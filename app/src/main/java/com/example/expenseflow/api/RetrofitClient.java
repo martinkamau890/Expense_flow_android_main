@@ -5,6 +5,8 @@ import android.content.Context;
 import com.example.expenseflow.AuthenticationInterceptor;
 import com.example.expenseflow.TokenManager;
 
+import java.util.concurrent.TimeUnit;
+
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
@@ -13,7 +15,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitClient {
 
-    private static final String BASE_URL = "http://192.168.100.3:9090/";
+    private static final String BASE_URL = "http://192.168.1.48:9090/";
 
     private static Retrofit retrofit;
 
@@ -26,6 +28,9 @@ public class RetrofitClient {
             logging.setLevel(HttpLoggingInterceptor.Level.BODY);
 
             OkHttpClient client = new OkHttpClient.Builder()
+                    .connectTimeout(30, TimeUnit.SECONDS)
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .writeTimeout(30, TimeUnit.SECONDS)
                     .addInterceptor(new AuthenticationInterceptor(tokenManager))
                     .addInterceptor(logging)
                     .build();

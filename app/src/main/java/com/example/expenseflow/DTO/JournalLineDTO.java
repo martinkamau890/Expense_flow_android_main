@@ -1,5 +1,11 @@
 package com.example.expenseflow.DTO;
 
+
+import androidx.room.Entity;
+import androidx.room.ForeignKey;
+import androidx.room.PrimaryKey;
+
+import com.example.expenseflow.Entity.Transaction;
 import com.example.expenseflow.Enum.EntryType;
 
 import java.math.BigDecimal;

@@ -1,13 +1,10 @@
 package com.example.expenseflow.DTO;
 
-import com.example.expenseflow.Enum.TransactionType;
+import com.example.expenseflow.Entity.JournalLine;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 public class TransactionDTO {
-
     private String description;
 
     List<JournalLineDTO> transactionEntryDTOList;
@@ -68,3 +65,4 @@ public class TransactionDTO {
         this.refNumber = refNumber;
     }
 }
+

@@ -15,16 +15,22 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.expenseflow.Converter.ConversionStatusConverter;
 import com.example.expenseflow.Converter.DateTimeConverter;
 import com.example.expenseflow.DataBase.AppDatabase;
 import com.example.expenseflow.Entity.AccountCategory;
 import com.example.expenseflow.Entity.ParsedSms;
 import com.example.expenseflow.Entity.UserAccount;
+import com.example.expenseflow.Enum.ConversionStatus;
+import com.example.expenseflow.Enum.TransactionType;
+import com.example.expenseflow.Services.CreateMpesaAssignmentRuleService;
+import com.example.expenseflow.Services.CreateTransactionService;
 import com.example.expenseflow.Services.MpesaExpenseService;
 import com.example.expenseflow.Services.TransactionCallback;
 import com.example.expenseflow.api.ApiService;
 import com.google.android.material.materialswitch.MaterialSwitch;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -38,21 +44,15 @@ public class UnassignedTransactionAdapter extends RecyclerView.Adapter<Unassigne
     private final Context context;
     private final ApiService apiService;
 
-    private UserAccount userAccount;
-
-
-
     public UnassignedTransactionAdapter(List<ParsedSms> parsedSmsList, List<UserAccount> userAccounts, List<AccountCategory> accountCategories, Context context, ApiService apiService) {
         this.parsedSmsList = parsedSmsList;
         this.userAccounts = userAccounts;
         this.accountCategories = accountCategories;
         this.context = context;
         this.apiService = apiService;
+
     }
 
-    public UserAccount getUserAccount() {
-        return userAccount;
-    }
 
     @NonNull
     @Override
@@ -66,10 +66,12 @@ public class UnassignedTransactionAdapter extends RecyclerView.Adapter<Unassigne
 
         ParsedSms parsedSms = parsedSmsList.get(position);
 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
         holder.transactionRecipient.setText(parsedSms.getCounterparty());
         holder.transactionAmount.setText("KES " + parsedSms.getTransactionAmount());
         holder.transactionDateTime.setText(
-                DateTimeConverter.toLocalDateTime(parsedSms.getTransactionTime()).toString());
+                DateTimeConverter.toLocalDateTime(parsedSms.getTransactionTime()).format(formatter));
         holder.messageSnippet.setText("place holder for message snippet");
 
 
@@ -115,7 +117,7 @@ public class UnassignedTransactionAdapter extends RecyclerView.Adapter<Unassigne
                 holder.account.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                     @Override
                     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                        userAccount = (UserAccount) parent.getItemAtPosition(position);
+
                     }
 
                     @Override
@@ -133,8 +135,35 @@ public class UnassignedTransactionAdapter extends RecyclerView.Adapter<Unassigne
 
 
         holder.assign.setOnClickListener(v -> {
+            UserAccount selectedAccount = (UserAccount) holder.account.getSelectedItem();
+            boolean quickAssign = holder.quickAssignSwitch.isChecked();
 
-            int currentPosition = holder.getBindingAdapterPosition();
+            ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+            executorService.execute(() -> {
+
+                CreateTransactionService createTransactionService = new CreateTransactionService( context);
+                boolean transactionCreated = createTransactionService.createTransaction(parsedSms,TransactionType.EXPENSE, selectedAccount.getId(), 1L);
+
+                if(transactionCreated){
+                    int currentPosition = holder.getBindingAdapterPosition();
+                    ((TransactionActivity) context).runOnUiThread(() -> {
+
+                        parsedSmsList.remove(currentPosition);
+
+                        notifyItemRemoved(currentPosition);
+                    });
+
+                    if (quickAssign){
+                        CreateMpesaAssignmentRuleService createMpesaAssignmentRuleService = new CreateMpesaAssignmentRuleService(parsedSms, parsedSms.getSmsType(), TransactionType.EXPENSE, selectedAccount.getId(), 1L, context);
+                        createMpesaAssignmentRuleService.createMpesaAssignmentRule();
+                    }
+
+                }
+
+            });
+
+            /*int currentPosition = holder.getBindingAdapterPosition();
 
             MpesaExpenseService expenseService =
                     new MpesaExpenseService(parsedSms, userAccount, context, apiService);
@@ -157,7 +186,7 @@ public class UnassignedTransactionAdapter extends RecyclerView.Adapter<Unassigne
 
                     Toast.makeText(context, error, Toast.LENGTH_SHORT).show();
                 }
-            });
+            });*/
         });
 
     }

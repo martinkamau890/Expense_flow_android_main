@@ -3,6 +3,7 @@ package com.example.expenseflow;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -171,9 +172,16 @@ public class MainActivity extends AppCompatActivity {
 
                 @Override
                 public void onFailure(Call<AuthenticationResponse> call, Throwable throwable) {
-                    Toast.makeText(MainActivity.this, "Network error", Toast.LENGTH_SHORT).show();
+
+                    Log.e("LOGIN", "Request failed", throwable);
+
+                    Toast.makeText(
+                            MainActivity.this,
+                            throwable.getMessage(),
+                            Toast.LENGTH_LONG
+                    ).show();
                 }
-            });
+        });
         }
 
 

@@ -53,7 +53,6 @@ public class HomePageActivity extends AppCompatActivity {
 
     private ApiService apiService;
 
-    private View nav_transactions;
 
     private ImageButton addTransactionButton;
 
@@ -106,23 +105,17 @@ public class HomePageActivity extends AppCompatActivity {
         totalAssetsText = findViewById(R.id.asset_amount_text);
         totalLiabilitiesText = findViewById(R.id.total_liability_text);
         recyclerView = findViewById(R.id.recent_activity_recycler_view);
-        nav_transactions = findViewById(R.id.nav_transactions);
         addTransactionButton = findViewById(R.id.add_transaction_Entry);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private void initializeActionListeners() {
 
-        nav_transactions.setOnClickListener(v -> {
+        addTransactionButton.setOnClickListener(v -> {
             ParseSmsService parseSmsService = new ParseSmsService();
             parseSmsService.parseSms(HomePageActivity.this);
             loadTransactionPage();
-        });
-
-        addTransactionButton.setOnClickListener(v -> {
-
-            Toast.makeText(HomePageActivity.this, "Button clicked", Toast.LENGTH_SHORT).show();
-        });
+             });
 
     }
 

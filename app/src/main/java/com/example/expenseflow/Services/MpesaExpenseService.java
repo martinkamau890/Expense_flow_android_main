@@ -9,6 +9,7 @@ import com.example.expenseflow.Converter.ConversionStatusConverter;
 import com.example.expenseflow.Converter.DateTimeConverter;
 import com.example.expenseflow.DTO.JournalLineDTO;
 import com.example.expenseflow.DTO.TransactionDTO;
+import com.example.expenseflow.Entity.JournalLine;
 import com.example.expenseflow.DTO.TransactionResponseDTO;
 import com.example.expenseflow.DataBase.AppDatabase;
 import com.example.expenseflow.Entity.ParsedSms;
@@ -20,6 +21,8 @@ import com.example.expenseflow.api.ApiService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -32,6 +35,8 @@ public class MpesaExpenseService {
     private Context context;
     private ApiService apiService;
 
+    private AppDatabase appDatabase = AppDatabase.getInstance(context);
+
     public MpesaExpenseService(ParsedSms parsedSms, UserAccount userAccount, Context context, ApiService apiService) {
         this.parsedSms = parsedSms;
         this.userAccount = userAccount;
@@ -40,7 +45,7 @@ public class MpesaExpenseService {
     }
 
     public List<JournalLineDTO> getJournalLines(){
-        List<JournalLineDTO> journalLineDTO = new ArrayList<>();
+        List<JournalLineDTO> journalLine = new ArrayList<>();
 
         JournalLineDTO debitJournalLine = new JournalLineDTO();
 
@@ -54,25 +59,26 @@ public class MpesaExpenseService {
         creditJournalLine.setEntryType(EntryType.CREDIT);
         creditJournalLine.setAccountId(1L);
 
-        journalLineDTO.add(debitJournalLine);
-        journalLineDTO.add(creditJournalLine);
+        journalLine.add(debitJournalLine);
+        journalLine.add(creditJournalLine);
 
-        return journalLineDTO;
+
+        return journalLine;
     }
 
     public TransactionDTO getTransactionDTO(){
 
-        TransactionDTO transactionDTO = new TransactionDTO();
+        TransactionDTO transaction = new TransactionDTO();
 
-        transactionDTO.setTransactionDate(DateTimeConverter.toLocalDateTime(parsedSms.getTransactionTime()).toString());
-        transactionDTO.setTransactionType(TransactionType.EXPENSE.toString());
-        transactionDTO.setTransactionEntryDTOList(getJournalLines());
-        transactionDTO.setDescription("Amount sent to " + parsedSms.getCounterparty());
-        transactionDTO.setRefNumber(parsedSms.getTransactionCode());
-        transactionDTO.setCurrencyCode(null);
+        transaction.setTransactionDate(DateTimeConverter.toLocalDateTime(parsedSms.getTransactionTime()).toString());
+        transaction.setTransactionType(TransactionType.EXPENSE.toString());
+        transaction.setTransactionEntryDTOList(getJournalLines());
+        transaction.setDescription("Amount sent to " + parsedSms.getCounterparty());
+        transaction.setRefNumber(parsedSms.getTransactionCode());
+        transaction.setCurrencyCode(null);
 
-        Log.d("TRANSACTIONDTO", "This is the transaction " + transactionDTO.getRefNumber());
-        return transactionDTO;
+        Log.d("TRANSACTIONDTO", "This is the transaction " + transaction.getRefNumber());
+        return transaction;
     }
 
     public void createTransaction(TransactionCallback transactionCallback){
@@ -83,18 +89,25 @@ public class MpesaExpenseService {
             @Override
             public void onResponse(Call<TransactionResponseDTO> call, Response<TransactionResponseDTO> response) {
                 if (response.isSuccessful()){
-                    parsedSms.setConversionStatus(ConversionStatusConverter.fromConversionStatus(ConversionStatus.PARSED));
+                    updateParsedSms();
                     TransactionResponseDTO message = response.body();
                     transactionCallback.onSuccess();
                     Log.d("TRANSACTIONDTO", message.getResponse());
                     Toast.makeText(context, message.getResponse(), Toast.LENGTH_SHORT).show();
                 }else {
-                    transactionCallback.onFailure(response.errorBody().toString());
                     Log.e("TRANSACTIONDTO", "HTTP Code: " + response.code());
-
                     try {
-                        Log.e("TRANSACTIONDTO",
-                                "Error Body: " + response.errorBody().string());
+                        String responseError = response.errorBody().string();
+                        if (responseError.equals("Duplicate value")){
+                                updateParsedSms();
+                            transactionCallback.onSuccess();
+                        }else {
+                            transactionCallback.onFailure(response.errorBody().toString());
+
+                            Log.e("TRANSACTIONDTO",
+                                    "Error Body: " + response.errorBody().string());
+                        }
+
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -112,4 +125,14 @@ public class MpesaExpenseService {
                         Toast.LENGTH_LONG).show();}
         });
     }
+
+    private void updateParsedSms(){
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+        executorService.execute(() -> {
+            appDatabase.parsedSmsDAO().updateConversionStatus(ConversionStatusConverter.fromConversionStatus(ConversionStatus.PARSED), parsedSms.getId());
+        });
+    }
+
+
 }

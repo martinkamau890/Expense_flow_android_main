@@ -5,6 +5,7 @@ import com.example.expenseflow.DTO.HomePageData;
 import com.example.expenseflow.DTO.LoginDTO;
 import com.example.expenseflow.DTO.RegistrationDTO;
 import com.example.expenseflow.DTO.TransactionDTO;
+import com.example.expenseflow.Entity.Transaction;
 import com.example.expenseflow.DTO.TransactionResponseDTO;
 import com.example.expenseflow.DTO.UserAccountBundle;
 
@@ -28,5 +29,5 @@ public interface ApiService {
     Call<UserAccountBundle> loadUserAccounts();
 
     @POST("/api/transaction/expense")
-    Call<TransactionResponseDTO> createExpense(@Body TransactionDTO transactionDTO);
+    Call<TransactionResponseDTO> createExpense(@Body TransactionDTO transaction);
 }

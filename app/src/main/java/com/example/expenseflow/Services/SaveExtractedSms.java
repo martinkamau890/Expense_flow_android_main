@@ -97,7 +97,7 @@ public class SaveExtractedSms {
         }
 
         public void setStartTime() {
-            LocalDate date = LocalDate.now().minusDays(1);
+            LocalDate date = LocalDate.now().minusDays(15);
             LocalDateTime localDateTime = date.atStartOfDay();
             this.startTime = DateTimeConverter.fromLocalDateTime(localDateTime);
         }

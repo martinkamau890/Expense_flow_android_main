@@ -5,7 +5,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,8 +21,10 @@ import com.example.expenseflow.Entity.ParsedSms;
 import com.example.expenseflow.Entity.UserAccount;
 import com.example.expenseflow.Enum.AccountType;
 import com.example.expenseflow.Enum.ConversionStatus;
+import com.example.expenseflow.Services.CreateTransactionService;
 import com.example.expenseflow.api.ApiService;
 import com.example.expenseflow.api.RetrofitClient;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,15 +36,17 @@ public class TransactionActivity extends AppCompatActivity {
     List<ParsedSms> parsedSmsList = new ArrayList<>();
 
     private RecyclerView recyclerView;
-    private ImageButton assignButton;
 
     private Button manualCashEntryButton;
+    private ImageButton backButton;
 
     private LinearLayout manualTransactionEntryField;
 
-    private AppDatabase appDatabase = AppDatabase.getInstance(TransactionActivity.this);
+    private AppDatabase appDatabase;
 
     private ApiService apiService;
+
+    private FloatingActionButton syncButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,55 +60,68 @@ public class TransactionActivity extends AppCompatActivity {
         });
 
         initializeView();
-        loadParsedSmsList();
-        implementActionListeners();
-        loadRecyclerView();
+        appDatabase = AppDatabase.getInstance(this);
         apiService = RetrofitClient.getRetrofitInstance(TransactionActivity.this).create(ApiService.class);
+        loadRecyclerView();
+        implementActionListeners();
     }
 
     private void initializeView(){
         recyclerView = findViewById(R.id.unassigned_transactions_recycler);
-        assignButton = findViewById(R.id.sync_mpesa_sms_fab);
         manualCashEntryButton = findViewById(R.id.manual_cash_entry_button);
         manualTransactionEntryField = findViewById(R.id.manual_entry_container);
+        backButton = findViewById(R.id.backButton);
+        syncButton = findViewById(R.id.bt_sync);
     }
 
-    public void loadParsedSmsList(){
+    public void loadRecyclerView() {
 
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-
-        executorService.execute(() ->{
-
-           parsedSmsList = appDatabase.parsedSmsDAO().getAll(ConversionStatusConverter.fromConversionStatus(ConversionStatus.PENDING));
-
-            executorService.shutdown();
-        });
-
-    }
-
-    public void loadRecyclerView(){
         ExecutorService executorService = Executors.newSingleThreadExecutor();
 
         executorService.execute(() -> {
-            List<AccountCategory> accountCategories = appDatabase.accountCategoryDAO().getAccountCategoryList(AccountType.EXPENSE.toString());
-            List<UserAccount> userAccountList = appDatabase.userAccountDAO().getUserAccount();
+            List<ParsedSms> smsList =
+                    appDatabase.parsedSmsDAO().getPendingSms(
+                            ConversionStatusConverter.fromConversionStatus(
+                                    ConversionStatus.PENDING
+                            )
+                    );
+
+            List<AccountCategory> accountCategories =
+                    appDatabase.accountCategoryDAO()
+                            .getAccountCategoryList(
+                                    AccountType.EXPENSE.toString()
+                            );
+
+            List<UserAccount> userAccountList =
+                    appDatabase.userAccountDAO()
+                            .getUserAccount();
 
             runOnUiThread(() -> {
 
-                UnassignedTransactionAdapter transactionAdapter = new UnassignedTransactionAdapter(parsedSmsList, userAccountList, accountCategories, TransactionActivity.this, apiService);
+                parsedSmsList.clear();
+                parsedSmsList.addAll(smsList);
+
+                UnassignedTransactionAdapter transactionAdapter =
+                        new UnassignedTransactionAdapter(
+                                parsedSmsList,
+                                userAccountList,
+                                accountCategories,
+                                TransactionActivity.this,
+                                apiService
+                        );
+
+                recyclerView.setLayoutManager(
+                        new LinearLayoutManager(TransactionActivity.this)
+                );
 
                 recyclerView.setAdapter(transactionAdapter);
-            recyclerView.setLayoutManager(new LinearLayoutManager(TransactionActivity.this));});
+            });
+
+            executorService.shutdown();
         });
-
-
     }
 
     public void implementActionListeners(){
-        assignButton.setOnClickListener(view -> {
-
-        });
-
         manualCashEntryButton.setOnClickListener(view -> {
             if (manualTransactionEntryField.getVisibility() == View.VISIBLE) {
                 manualTransactionEntryField.setVisibility(View.GONE);
@@ -113,6 +129,31 @@ public class TransactionActivity extends AppCompatActivity {
                 manualTransactionEntryField.setVisibility(View.VISIBLE);
             }
         });
+       backButton.setOnClickListener(view -> {
+            loadHomePage();
+        });
+        syncButton.setOnClickListener(view -> {
+            ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+            executorService.execute(() -> {
+
+                CreateTransactionService createTransactionService = new CreateTransactionService(TransactionActivity.this);
+                createTransactionService.createTransactionBasedOnAssignmentRule();
+
+                runOnUiThread(() -> {
+                    loadRecyclerView();
+                });
+
+
+            });
+
+            executorService.shutdown();
+        });
+
+    }
+
+    private void loadHomePage(){
+        finish();
     }
 
 
