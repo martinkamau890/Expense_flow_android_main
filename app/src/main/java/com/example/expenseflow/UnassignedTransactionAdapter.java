@@ -70,8 +70,7 @@ public class UnassignedTransactionAdapter extends RecyclerView.Adapter<Unassigne
 
         holder.transactionRecipient.setText(parsedSms.getCounterparty());
         holder.transactionAmount.setText("KES " + parsedSms.getTransactionAmount());
-        holder.transactionDateTime.setText(
-                DateTimeConverter.toLocalDateTime(parsedSms.getTransactionTime()).format(formatter));
+        holder.transactionDateTime.setText(DateTimeConverter.toLocalDateTime(parsedSms.getTransactionTime()).format(formatter));
         holder.messageSnippet.setText("place holder for message snippet");
 
 

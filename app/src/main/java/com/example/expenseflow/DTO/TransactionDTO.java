@@ -1,7 +1,9 @@
 package com.example.expenseflow.DTO;
 
 import com.example.expenseflow.Entity.JournalLine;
+import com.example.expenseflow.Enum.TransactionType;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class TransactionDTO {
@@ -9,9 +11,9 @@ public class TransactionDTO {
 
     List<JournalLineDTO> transactionEntryDTOList;
 
-    private String transactionDate;
+    private LocalDateTime transactionDate;
 
-    private String transactionType;
+    private TransactionType transactionType;
 
     private String currencyCode;
 
@@ -33,19 +35,19 @@ public class TransactionDTO {
         this.transactionEntryDTOList = transactionEntryDTOList;
     }
 
-    public String getTransactionDate() {
+    public LocalDateTime getTransactionDate() {
         return transactionDate;
     }
 
-    public void setTransactionDate(String transactionDate) {
+    public void setTransactionDate(LocalDateTime transactionDate) {
         this.transactionDate = transactionDate;
     }
 
-    public String getTransactionType() {
+    public TransactionType getTransactionType() {
         return transactionType;
     }
 
-    public void setTransactionType(String transactionType) {
+    public void setTransactionType(TransactionType transactionType) {
         this.transactionType = transactionType;
     }
 

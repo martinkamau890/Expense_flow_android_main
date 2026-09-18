@@ -5,20 +5,20 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.example.expenseflow.Converter.BigDecimalConverter;
-import com.example.expenseflow.Converter.ConversionStatusConverter;
 import com.example.expenseflow.Converter.DateTimeConverter;
 import com.example.expenseflow.DTO.JournalLineDTO;
 import com.example.expenseflow.DTO.TransactionDTO;
-import com.example.expenseflow.Entity.JournalLine;
 import com.example.expenseflow.DTO.TransactionResponseDTO;
+import com.example.expenseflow.Entity.JournalLine;
 import com.example.expenseflow.DataBase.AppDatabase;
-import com.example.expenseflow.Entity.ParsedSms;
-import com.example.expenseflow.Entity.UserAccount;
-import com.example.expenseflow.Enum.ConversionStatus;
+import com.example.expenseflow.Entity.Transaction;
 import com.example.expenseflow.Enum.EntryType;
-import com.example.expenseflow.Enum.TransactionType;
+import com.example.expenseflow.Enum.SyncStatus;
 import com.example.expenseflow.api.ApiService;
+import com.google.gson.Gson;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -29,110 +29,189 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class MpesaExpenseService {
-
-    private ParsedSms parsedSms;
-    private UserAccount userAccount;
     private Context context;
     private ApiService apiService;
 
-    private AppDatabase appDatabase = AppDatabase.getInstance(context);
+    private AppDatabase appDatabase;
 
-    public MpesaExpenseService(ParsedSms parsedSms, UserAccount userAccount, Context context, ApiService apiService) {
-        this.parsedSms = parsedSms;
-        this.userAccount = userAccount;
+    public MpesaExpenseService(Context context, ApiService apiService) {
         this.apiService = apiService;
         this.context = context;
+        this.appDatabase = AppDatabase.getInstance(context);
+
     }
 
-    public List<JournalLineDTO> getJournalLines(){
-        List<JournalLineDTO> journalLine = new ArrayList<>();
+    public List<JournalLineDTO> returnJournalLineDTO(Transaction transaction){
 
-        JournalLineDTO debitJournalLine = new JournalLineDTO();
+        List<JournalLine> journalLineList = getJournalines(transaction);
 
-        debitJournalLine.setAmount(BigDecimalConverter.toBigDecimal(parsedSms.getTransactionAmount()));
-        debitJournalLine.setAccountId(userAccount.getId());
-        debitJournalLine.setEntryType(EntryType.DEBIT);
+        List<JournalLineDTO> journal = new ArrayList<>();
 
-        JournalLineDTO creditJournalLine = new JournalLineDTO();
+        for (JournalLine journalLine: journalLineList){
 
-        creditJournalLine.setAmount(BigDecimalConverter.toBigDecimal(parsedSms.getTransactionAmount()));
-        creditJournalLine.setEntryType(EntryType.CREDIT);
-        creditJournalLine.setAccountId(1L);
+            if (journalLine.getEntryType().equals(EntryType.DEBIT)){
 
-        journalLine.add(debitJournalLine);
-        journalLine.add(creditJournalLine);
+                JournalLineDTO debitJournalLine = new JournalLineDTO();
+
+                debitJournalLine.setAmount(BigDecimalConverter.toBigDecimal(journalLine.getAmount()));
+                debitJournalLine.setAccountId(journalLine.getAccountId());
+                debitJournalLine.setEntryType(journalLine.getEntryType());
+
+                journal.add(debitJournalLine);
+            }
 
 
-        return journalLine;
+            if (journalLine.getEntryType().equals(EntryType.CREDIT)){
+
+                JournalLineDTO creditJournalLine = new JournalLineDTO();
+
+                creditJournalLine.setAmount(BigDecimalConverter.toBigDecimal(journalLine.getAmount()));
+                creditJournalLine.setEntryType(journalLine.getEntryType());
+                creditJournalLine.setAccountId(journalLine.getAccountId());
+
+                journal.add(creditJournalLine);
+            }
+        }
+
+        return journal;
     }
 
-    public TransactionDTO getTransactionDTO(){
+    public List<TransactionDTO> returnTransactionDTO(List<Transaction> transactions) {
 
-        TransactionDTO transaction = new TransactionDTO();
+        List<TransactionDTO> transactionDTOList = new ArrayList<>();
 
-        transaction.setTransactionDate(DateTimeConverter.toLocalDateTime(parsedSms.getTransactionTime()).toString());
-        transaction.setTransactionType(TransactionType.EXPENSE.toString());
-        transaction.setTransactionEntryDTOList(getJournalLines());
-        transaction.setDescription("Amount sent to " + parsedSms.getCounterparty());
-        transaction.setRefNumber(parsedSms.getTransactionCode());
-        transaction.setCurrencyCode(null);
+        for (Transaction transaction : transactions) {
 
-        Log.d("TRANSACTIONDTO", "This is the transaction " + transaction.getRefNumber());
-        return transaction;
+            TransactionDTO transactionDTO = new TransactionDTO();
+
+            transactionDTO.setTransactionDate(LocalDateTime.parse(transaction.getTransactionDate()));
+            transactionDTO.setTransactionType(transaction.getTransactionType());
+            transactionDTO.setTransactionEntryDTOList(
+                    returnJournalLineDTO(transaction)
+            );
+
+            transactionDTO.setDescription(transaction.getDescription());
+            transactionDTO.setRefNumber(transaction.getRefNumber());
+            transactionDTO.setCurrencyCode(null);
+
+            transactionDTOList.add(transactionDTO);
+            Log.d(
+                    "TRANSACTIONS",
+                    "Preparing: " + transactionDTO.getRefNumber()
+            );
+        }
+
+        return transactionDTOList;
     }
 
-    public void createTransaction(TransactionCallback transactionCallback){
+    public void createTransaction() {
 
-        Call<TransactionResponseDTO> call = apiService.createExpense(getTransactionDTO());
+        ExecutorService executorService =
+                Executors.newSingleThreadExecutor();
 
-        call.enqueue(new Callback<TransactionResponseDTO>() {
-            @Override
-            public void onResponse(Call<TransactionResponseDTO> call, Response<TransactionResponseDTO> response) {
-                if (response.isSuccessful()){
-                    updateParsedSms();
-                    TransactionResponseDTO message = response.body();
-                    transactionCallback.onSuccess();
-                    Log.d("TRANSACTIONDTO", message.getResponse());
-                    Toast.makeText(context, message.getResponse(), Toast.LENGTH_SHORT).show();
-                }else {
-                    Log.e("TRANSACTIONDTO", "HTTP Code: " + response.code());
-                    try {
-                        String responseError = response.errorBody().string();
-                        if (responseError.equals("Duplicate value")){
-                                updateParsedSms();
-                            transactionCallback.onSuccess();
-                        }else {
-                            transactionCallback.onFailure(response.errorBody().toString());
+        executorService.execute(() -> {
 
-                            Log.e("TRANSACTIONDTO",
-                                    "Error Body: " + response.errorBody().string());
+            List<Transaction> transactionsToSync = getPendingTransactions();
+
+            if (transactionsToSync.isEmpty()) {
+
+                Log.d("SYNC", "No pending M-Pesa transactions");
+
+                return;
+            }
+
+            List<TransactionDTO> transactionDTOList = returnTransactionDTO(transactionsToSync);
+
+            /*for (TransactionDTO transactionDTO: transactionDTOList){
+                Log.d("DATE_DEBUG", "for ref number " + transactionDTO.getRefNumber() + " The date is " + transactionDTO.getTransactionDate());
+            }*/
+
+            Call<TransactionResponseDTO> call =
+                    apiService.createExpense(transactionDTOList);
+
+
+
+            call.enqueue(new Callback<TransactionResponseDTO>() {
+
+                @Override
+                public void onResponse(
+                        Call<TransactionResponseDTO> call,
+                        Response<TransactionResponseDTO> response) {
+
+                    if (response.isSuccessful()) {
+
+                        for (Transaction transaction: transactionsToSync){
+                            Log.d("DATE_DEBUG", "for ref number " + transaction.getRefNumber() + " Recepient is " + transaction.getDescription());
                         }
 
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                        updatePendingTransactions(transactionsToSync);
+
+                        Log.d(
+                                "SYNC",
+                                "Successfully synced "
+                                        + transactionsToSync.size()
+                                        + " transactions"
+                        );
+
+                    } else {
+
+                        Log.e(
+                                "SYNC",
+                                "Sync failed. HTTP code: "
+                                        + response.code()
+                        );
                     }
                 }
 
+                @Override
+                public void onFailure(
+                        Call<TransactionResponseDTO> call,
+                        Throwable throwable) {
+
+                    Log.e(
+                            "SYNC",
+                            "Network error",
+                            throwable
+                    );
+                }
+            });
+        });
+
+        executorService.shutdown();
+    }
+
+    private void updatePendingTransactions(List<Transaction> transactionList){
+        for (Transaction transaction: transactionList){
+            ExecutorService executorService =
+                    Executors.newSingleThreadExecutor();
+
+            executorService.execute(() -> {
+
+            appDatabase.transactionDAO().updateTransactionStatus(SyncStatus.SYNCED, transaction.getId());
+        });
+        }
+    }
+
+    private List<Transaction> getPendingTransactions(){
+        List<Transaction> transactionList = appDatabase.transactionDAO().getPendingTransactions(SyncStatus.PENDING);
+
+        if (!transactionList.isEmpty()) {
+
+            for (Transaction transaction: transactionList){
+                Log.d("Transaction_list_debug", "Transaction " + transaction.getRefNumber() + " To " + transaction.getDescription());
             }
 
-            @Override
-            public void onFailure(Call<TransactionResponseDTO> call, Throwable throwable) {
-                Log.e("TRANSACTIONDTO", "Request failed", throwable);
-
-                transactionCallback.onFailure(throwable.getMessage());
-                Toast.makeText(context,
-                        throwable.getMessage(),
-                        Toast.LENGTH_LONG).show();}
-        });
+            return transactionList;
+        }
+        return new ArrayList<>();
     }
 
-    private void updateParsedSms(){
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private List<JournalLine> getJournalines(Transaction transaction){
 
-        executorService.execute(() -> {
-            appDatabase.parsedSmsDAO().updateConversionStatus(ConversionStatusConverter.fromConversionStatus(ConversionStatus.PARSED), parsedSms.getId());
-        });
+
+        List<JournalLine> journalLineList = appDatabase.journalLineDAO().getPendingJournalLines(transaction.getId());
+
+        return journalLineList;
     }
-
 
 }

@@ -5,6 +5,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,6 +23,8 @@ import com.example.expenseflow.Entity.UserAccount;
 import com.example.expenseflow.Enum.AccountType;
 import com.example.expenseflow.Enum.ConversionStatus;
 import com.example.expenseflow.Services.CreateTransactionService;
+import com.example.expenseflow.Services.MpesaExpenseService;
+import com.example.expenseflow.Services.TransactionCallback;
 import com.example.expenseflow.api.ApiService;
 import com.example.expenseflow.api.RetrofitClient;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -133,23 +136,14 @@ public class TransactionActivity extends AppCompatActivity {
             loadHomePage();
         });
         syncButton.setOnClickListener(view -> {
-            ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-            executorService.execute(() -> {
+            MpesaExpenseService expenseService = new MpesaExpenseService(TransactionActivity.this, apiService);
 
-                CreateTransactionService createTransactionService = new CreateTransactionService(TransactionActivity.this);
-                createTransactionService.createTransactionBasedOnAssignmentRule();
-
+            expenseService.createTransaction();
                 runOnUiThread(() -> {
                     loadRecyclerView();
                 });
-
-
             });
-
-            executorService.shutdown();
-        });
-
     }
 
     private void loadHomePage(){

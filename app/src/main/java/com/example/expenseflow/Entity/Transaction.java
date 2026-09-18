@@ -25,7 +25,6 @@ public class Transaction {
 
     private String currencyCode;
 
-
     private String refNumber;
 
     private SyncStatus parsedStatus;

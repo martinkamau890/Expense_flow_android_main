@@ -47,4 +47,5 @@ dependencies {
     annotationProcessor("androidx.room:room-compiler:2.7.2")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
+
 }

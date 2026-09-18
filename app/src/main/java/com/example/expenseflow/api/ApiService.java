@@ -9,6 +9,8 @@ import com.example.expenseflow.Entity.Transaction;
 import com.example.expenseflow.DTO.TransactionResponseDTO;
 import com.example.expenseflow.DTO.UserAccountBundle;
 
+import java.util.List;
+
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
@@ -29,5 +31,5 @@ public interface ApiService {
     Call<UserAccountBundle> loadUserAccounts();
 
     @POST("/api/transaction/expense")
-    Call<TransactionResponseDTO> createExpense(@Body TransactionDTO transaction);
+    Call<TransactionResponseDTO> createExpense(@Body List<TransactionDTO> transaction);
 }

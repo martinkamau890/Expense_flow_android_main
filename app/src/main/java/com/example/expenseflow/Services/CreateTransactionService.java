@@ -20,12 +20,13 @@ import java.util.concurrent.Executors;
 
 public class CreateTransactionService {
     private Context context;
-    private AppDatabase appDatabase = AppDatabase.getInstance(context);
+    private AppDatabase appDatabase;
 
 
 
     public CreateTransactionService(Context context) {
         this.context = context;
+        this.appDatabase = AppDatabase.getInstance(context);
     }
 
 
@@ -63,11 +64,53 @@ public class CreateTransactionService {
         appDatabase.journalLineDAO().insert(creditJournalLine);
 
     }
+
+    private long createTransactionFeeLine(ParsedSms parsedSms, TransactionType transactionType){
+        Transaction transaction = new Transaction();
+
+        transaction.setTransactionDate(DateTimeConverter.toLocalDateTime(parsedSms.getTransactionTime()).toString());
+        transaction.setTransactionType(transactionType);
+        transaction.setDescription("Transaction cost for " + parsedSms.getCounterparty());
+        transaction.setRefNumber(parsedSms.getTransactionCode() + " Fee");
+        transaction.setParsedStatus(SyncStatus.PENDING);
+        transaction.setCurrencyCode(null);
+
+        return  appDatabase.transactionDAO().insert(transaction);
+    }
+
+    private void createTransactionFeeJournalLine(long transactionId, ParsedSms parsedSms){
+
+        JournalLine debitJournalLine = new JournalLine();
+
+        debitJournalLine.setTransactionId(transactionId);
+        debitJournalLine.setAmount(parsedSms.getTransactionFee());
+        debitJournalLine.setAccountId(94L);
+        debitJournalLine.setEntryType(EntryType.DEBIT);
+
+        appDatabase.journalLineDAO().insert(debitJournalLine);
+
+        JournalLine creditJournalLine = new JournalLine();
+
+        creditJournalLine.setTransactionId(transactionId);
+        creditJournalLine.setAmount(parsedSms.getTransactionFee());
+        creditJournalLine.setEntryType(EntryType.CREDIT);
+        creditJournalLine.setAccountId(1L);
+
+        appDatabase.journalLineDAO().insert(creditJournalLine);
+
+    }
+
+    private void createTransactionFeeJournalLine(ParsedSms parsedSms, TransactionType transactionType){
+
+        long transactionId = createTransactionFeeLine(parsedSms, transactionType);
+        createTransactionFeeJournalLine(transactionId, parsedSms);
+    }
     @androidx.room.Transaction
     public boolean createTransaction(ParsedSms parsedSms, TransactionType transactionType, long debitAccount, long creditAccount){
 
         long id = createTransactionLine(parsedSms, transactionType);
         createJournalLine(id, parsedSms, debitAccount, creditAccount);
+        createTransactionFeeJournalLine(parsedSms, transactionType);
         appDatabase.parsedSmsDAO().updateConversionStatus(ConversionStatusConverter.fromConversionStatus(ConversionStatus.PARSED), parsedSms.getId());
         return true;
     }

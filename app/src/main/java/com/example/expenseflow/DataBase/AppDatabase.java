@@ -14,7 +14,7 @@ import com.example.expenseflow.Entity.RawSms;
 import com.example.expenseflow.Entity.Transaction;
 import com.example.expenseflow.Entity.UserAccount;
 
-@Database(entities = {RawSms.class, ParsedSms.class, AccountCategory.class, UserAccount.class, JournalLine.class, Transaction.class, MpesaAssignmentRule.class}, version = 16)
+@Database(entities = {RawSms.class, ParsedSms.class, AccountCategory.class, UserAccount.class, JournalLine.class, Transaction.class, MpesaAssignmentRule.class}, version = 21)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract RawSmsDAO rawSmsDAO();

@@ -27,6 +27,7 @@ import com.example.expenseflow.DTO.HomePageData;
 import com.example.expenseflow.DTO.PageResponse;
 import com.example.expenseflow.DTO.PostedTransactionDTO;
 import com.example.expenseflow.DTO.TransactionSummaryDTO;
+import com.example.expenseflow.Services.CreateTransactionService;
 import com.example.expenseflow.Services.ParseSmsService;
 import com.example.expenseflow.Services.SaveExtractedSms;
 import com.example.expenseflow.Services.SaveUserAccounts;
@@ -35,6 +36,8 @@ import com.example.expenseflow.api.RetrofitClient;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -77,6 +80,7 @@ public class HomePageActivity extends AppCompatActivity {
 
         loadHomePageData();
 
+
         //Ask permission to the user to allow the app to read messages
         if (ContextCompat.checkSelfPermission(
                 HomePageActivity.this,
@@ -94,7 +98,7 @@ public class HomePageActivity extends AppCompatActivity {
         SaveExtractedSms saveExtractedSms = new SaveExtractedSms();
         saveExtractedSms.saveExtractedSms(HomePageActivity.this);
 
-
+        autoAssignTransactions();
     }
 
     private void initializeViews(){
@@ -197,84 +201,18 @@ public class HomePageActivity extends AppCompatActivity {
 
     }
 
-   /* @RequiresApi(api = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    private void readSms() {
+    public void autoAssignTransactions(){
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-        TransactionTime transactionTime = new TransactionTime();
+        executorService.execute(() -> {
 
-        //Uri is the address that points to the sms inbox
-        Uri uri = Uri.parse("content://sms/inbox");
+            CreateTransactionService createTransactionService = new CreateTransactionService(HomePageActivity.this);
+            createTransactionService.createTransactionBasedOnAssignmentRule();
 
-        //Cursor is the iterator that points to one row at a time in the database
-        //Content resolver is the method that the app uses to query the data base
-        Cursor cursor = getContentResolver().query(
-                //the address or table
-                uri,
-                //which column to return null means all
-                null,
-                //this is the where clause
-                "address = ? AND date BETWEEN ? AND ?",
-                //the value of the where clause
-                new String[]{"MPESA", String.valueOf(transactionTime.getStartTime()), String.valueOf(transactionTime.getCurrentTime())},
-                //Order by
-                "date DESC"
-        );
 
-        if(cursor != null){
+        });
 
-            while(cursor.moveToNext()){
-
-                String address =
-                        cursor.getString(
-                                cursor.getColumnIndexOrThrow("address"));
-
-                String body =
-                        cursor.getString(
-                                cursor.getColumnIndexOrThrow("body"));
-
-                long timeStamp = cursor.getLong(cursor.getColumnIndexOrThrow("date"));
-
-                Date date = new Date(timeStamp);
-                LocalDate date1 = LocalDate.ofInstant(date.toInstant(), ZoneId.systemDefault());
-
-                Log.d("SMS", "Sender: " + address);
-                Log.d("SMS", "Message: " + body);
-                Log.d("SMS", "Date: " + date1);
-
-                Toast.makeText(HomePage.this, address, Toast.LENGTH_LONG).show();
-            }
-
-            cursor.close();
-        }
+        executorService.shutdown();
+    }
     }
 
-    private class TransactionTime {
-
-        long startTime;
-        long currentTime;
-
-        public TransactionTime() {
-            setCurrentTime();
-            setStartTime();
-        }
-
-        public long getStartTime() {
-            return startTime;
-        }
-
-        public void setStartTime() {
-            LocalDate date = LocalDate.now().minusDays(1);
-            LocalDateTime localDateTime = date.atStartOfDay();
-            this.startTime = localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-        }
-
-        public long getCurrentTime() {
-            return currentTime;
-        }
-
-        public void setCurrentTime() {
-            this.currentTime = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-        }
-    }*/
-
-}
