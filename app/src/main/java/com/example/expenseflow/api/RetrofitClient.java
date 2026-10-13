@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 
 public class RetrofitClient {
 
-    private static final String BASE_URL = "http://192.168.1.48:9090/";
+    private static final String BASE_URL = "http://192.168.1.109:9090/";
 
     private static Retrofit retrofit;
 

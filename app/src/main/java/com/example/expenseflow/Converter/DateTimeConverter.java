@@ -30,4 +30,18 @@ public class DateTimeConverter {
                 ZoneId.systemDefault()
         );
     }
+
+    @TypeConverter
+    public static Long stringToLong(String dateTime) {
+        if (dateTime == null || dateTime.isEmpty()) {
+            return null;
+        }
+
+        LocalDateTime localDateTime = LocalDateTime.parse(dateTime);
+
+        return localDateTime
+                .atZone(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli();
+    }
 }

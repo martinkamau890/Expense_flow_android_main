@@ -18,8 +18,14 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.expenseflow.DTO.AuthenticationResponse;
 import com.example.expenseflow.DTO.LoginDTO;
+import com.example.expenseflow.Entity.TransactionDate;
+import com.example.expenseflow.Services.TransactionDateService;
 import com.example.expenseflow.api.ApiService;
 import com.example.expenseflow.api.RetrofitClient;
+
+import java.time.LocalDateTime;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -154,6 +160,27 @@ public class MainActivity extends AppCompatActivity {
                         TokenManager tokenManager = new TokenManager(MainActivity.this);
 
                         tokenManager.saveToken(authenticationResponse.getToken());
+
+                        ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+                        executorService.execute(() ->{
+
+                            TransactionDateService transactionDateService = new TransactionDateService(MainActivity.this);
+
+                            String regDate = transactionDateService.getRegDate();
+
+                            Log.d("TRANSACTION_DATE_DEBUG", "Pre login date " + regDate);
+
+                            if(regDate == null || regDate.isEmpty()){
+                                TransactionDate transactionDate = new TransactionDate();
+                                transactionDate.setRegDate(authenticationResponse.getRegistrationDate());
+                                transactionDateService.insert(transactionDate);
+
+                                Log.d("TRANSACTION_DATE_DEBUG", "Post login date " + transactionDate.getRegDate());
+
+                            }
+                            executorService.shutdown();
+                        });
 
                         loadHomePage();
                     }else {

@@ -10,4 +10,9 @@
     <color name="TextColor">#454652</color>
     <color name="SecondaryTextColor">#002204</color>
     <color name="BottomNavigation">#EFECF5</color>
+    <color name="color_surface_container_high">#EAE7EF</color>
+    <color name="transparent">#00000000</color>
+    <color name="color_outline_variant">#E4E1EA</color>
+    <color name="color_error_container">#FFDAD6</color>
+    <color name="color_surface_container_highest">#E4E1EA</color>
 </resources>

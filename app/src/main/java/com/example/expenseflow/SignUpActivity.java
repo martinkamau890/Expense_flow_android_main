@@ -14,10 +14,17 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.expenseflow.Converter.DateTimeConverter;
 import com.example.expenseflow.DTO.AuthenticationResponse;
 import com.example.expenseflow.DTO.RegistrationDTO;
+import com.example.expenseflow.Entity.TransactionDate;
+import com.example.expenseflow.Services.TransactionDateService;
 import com.example.expenseflow.api.ApiService;
 import com.example.expenseflow.api.RetrofitClient;
+
+import java.time.LocalDateTime;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -177,6 +184,19 @@ public class SignUpActivity extends AppCompatActivity {
                         TokenManager tokenManager = new TokenManager(SignUpActivity.this);
 
                         tokenManager.saveToken(authenticationResponse.getToken());
+
+                        ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+                        executorService.execute(() ->{
+
+                            TransactionDateService transactionDateService = new TransactionDateService(SignUpActivity.this);
+                            TransactionDate transactionDate = new TransactionDate();
+                            transactionDate.setRegDate(authenticationResponse.getRegistrationDate());
+
+                            transactionDateService.signupDate(transactionDate);
+
+                            executorService.shutdown();
+                        });
 
                         loadHomePage();
                     }else {

@@ -30,7 +30,7 @@ public class SaveExtractedSms {
 
     //read sms
     @RequiresApi(api = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    public List<ExtractedMessageDTO> readSms(Context context) {
+    public List<ExtractedMessageDTO> readSms(Context context, String regDate) {
 
         List<ExtractedMessageDTO> extractedMessageDTOList = new ArrayList<>();
         TransactionTime transactionTime = new TransactionTime();
@@ -43,7 +43,7 @@ public class SaveExtractedSms {
                 uri,
                 null,
                 "address = ? AND date BETWEEN ? AND ?",
-                new String[]{"MPESA", String.valueOf(transactionTime.startTime), String.valueOf(transactionTime.currentTime)},
+                new String[]{"MPESA", String.valueOf(DateTimeConverter.stringToLong(regDate)), String.valueOf(transactionTime.currentTime)},
                 "date DESC"
         );
 
@@ -121,9 +121,12 @@ public class SaveExtractedSms {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
 
         executorService.execute(() -> {
-            List<ExtractedMessageDTO> dtoList = readSms(context);
+
 
             AppDatabase database = AppDatabase.getInstance(context);
+
+            String regDate = database.transactionDateDAO().getRegDate();
+            List<ExtractedMessageDTO> dtoList = readSms(context, regDate);
 
             if (!dtoList.isEmpty()){
                 for (ExtractedMessageDTO messageDTO: dtoList){

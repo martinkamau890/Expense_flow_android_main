@@ -12,9 +12,10 @@ import com.example.expenseflow.Entity.MpesaAssignmentRule;
 import com.example.expenseflow.Entity.ParsedSms;
 import com.example.expenseflow.Entity.RawSms;
 import com.example.expenseflow.Entity.Transaction;
+import com.example.expenseflow.Entity.TransactionDate;
 import com.example.expenseflow.Entity.UserAccount;
 
-@Database(entities = {RawSms.class, ParsedSms.class, AccountCategory.class, UserAccount.class, JournalLine.class, Transaction.class, MpesaAssignmentRule.class}, version = 21)
+@Database(entities = {RawSms.class, ParsedSms.class, AccountCategory.class, UserAccount.class, JournalLine.class, Transaction.class, MpesaAssignmentRule.class, TransactionDate.class}, version = 24)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract RawSmsDAO rawSmsDAO();
@@ -30,6 +31,8 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract JournalLineDAO journalLineDAO();
 
     public abstract MpesaAssignmentRuleDAO mpesaAssignmentRuleDAO();
+
+    public abstract TransactionDateDAO transactionDateDAO();
 
     private static AppDatabase instance;
 

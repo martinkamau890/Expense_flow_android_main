@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -58,6 +59,8 @@ public class HomePageActivity extends AppCompatActivity {
 
 
     private ImageButton addTransactionButton;
+
+    private LinearLayout expenseLayout;
 
 
     private static final int SMS_PERMISSION_CODE = 100;
@@ -110,6 +113,7 @@ public class HomePageActivity extends AppCompatActivity {
         totalLiabilitiesText = findViewById(R.id.total_liability_text);
         recyclerView = findViewById(R.id.recent_activity_recycler_view);
         addTransactionButton = findViewById(R.id.add_transaction_Entry);
+        expenseLayout = findViewById(R.id.expensesButton);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
@@ -120,6 +124,13 @@ public class HomePageActivity extends AppCompatActivity {
             parseSmsService.parseSms(HomePageActivity.this);
             loadTransactionPage();
              });
+
+        expenseLayout.setOnClickListener(v ->{
+
+            Intent intent = new Intent(HomePageActivity.this, ExpenseActivity.class);
+            startActivity(intent);
+
+        });
 
     }
 
